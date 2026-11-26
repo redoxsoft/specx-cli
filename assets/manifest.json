@@ -1,0 +1,22 @@
+{
+  "generatedBy": "redoxsoft-mcp packaging/build.ts",
+  "pluginVersion": "0.1.1",
+  "promptVersion": "0720a6ab",
+  "marketplace": {
+    "name": "redoxsoft",
+    "gitUrl": "https://github.com/redoxsoft/agent-plugins.git",
+    "githubRepo": "redoxsoft/agent-plugins"
+  },
+  "plugin": {
+    "name": "specx",
+    "id": "specx@redoxsoft"
+  },
+  "mcp": {
+    "serverName": "specx",
+    "url": "https://mcp.redoxsoft.com/mcp"
+  },
+  "skills": [
+    "specx"
+  ],
+  "connectPageUrl": "https://specx.redoxsoft.com/docs/connect"
+}

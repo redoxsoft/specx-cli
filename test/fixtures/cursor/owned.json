@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "github": {
+      "url": "https://example.com/mcp"
+    },
+    "specx": {
+      "url": "https://mcp.redoxsoft.com/mcp"
+    }
+  }
+}
