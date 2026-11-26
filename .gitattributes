@@ -1,0 +1,3 @@
+# Check out text files with LF on every platform (Windows git would otherwise convert
+# to CRLF), so the test fixtures are byte-identical everywhere.
+* text=auto eol=lf
