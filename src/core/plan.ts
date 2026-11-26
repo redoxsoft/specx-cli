@@ -12,7 +12,8 @@ export type Step =
   | { kind: 'file'; change: FileChange }
   | { kind: 'copy-skill'; skill: Assets['skills'][number]; destDir: string; describe: string }
   | { kind: 'remove-dir'; dir: string; describe: string }
-  | { kind: 'skip'; describe: string };
+  /** Nothing to do. `problem`: SpecX couldn't be set up here (shown as needing attention). */
+  | { kind: 'skip'; describe: string; problem?: boolean };
 
 export interface AgentPlan {
   agentId: string;
@@ -71,7 +72,7 @@ export function renderPlan(plans: AgentPlan[]): string {
           break;
         }
         case 'skip': {
-          lines.push(`  - skip: ${step.describe}`);
+          lines.push(step.problem ? `  - ! ${step.describe}` : `  - skip: ${step.describe}`);
           break;
         }
       }
@@ -127,14 +128,35 @@ function notOwnedError(skillName: string): string {
   return `a skill named ${skillName} already exists and wasn't installed by SpecX`;
 }
 
+/** Install and remove commands can fetch over the network (a Codex marketplace refresh took 130 s). */
+export const RUN_STEP_TIMEOUT_MS = 300_000;
+
+/** One line describing a step, for progress output while it runs. */
+export function stepLabel(step: Step): string {
+  switch (step.kind) {
+    case 'run':
+      return `${step.command} ${step.args.join(' ')}`;
+    case 'file':
+      return step.change.summary;
+    case 'copy-skill':
+      return `copy skill ${step.skill.name} to ${step.destDir}`;
+    case 'remove-dir':
+      return `remove ${step.dir}`;
+    case 'skip':
+      return step.describe;
+  }
+}
+
 export async function executePlan(
   ctx: Ctx,
   plan: AgentPlan,
   exe: (name: string) => string | null,
+  onStep?: (step: Step) => void,
 ): Promise<StepResult[]> {
   const results: StepResult[] = [];
 
   for (const step of plan.steps) {
+    if (step.kind !== 'skip') onStep?.(step);
     if (step.kind === 'run') {
       const resolved = exe(step.command);
       if (!resolved) {
@@ -145,7 +167,7 @@ export async function executePlan(
         });
         break;
       }
-      const res = await ctx.run(resolved, step.args);
+      const res = await ctx.run(resolved, step.args, { timeoutMs: RUN_STEP_TIMEOUT_MS });
       if (res.timedOut) {
         results.push({
           step,

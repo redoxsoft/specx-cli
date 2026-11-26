@@ -8,7 +8,7 @@ const det = { found: true, executable: 'codex' };
 
 test('codex: nothing installed -> plan is marketplace add + install with exact args', async (t) => {
   const runner = fakeRunner({
-    'codex plugin list --json': { stdout: '{"installed": []}' },
+    'codex plugin list --marketplace specx --json': { stdout: '{"installed": []}' },
     'codex plugin marketplace list': { stdout: 'MARKETPLACE ROOT\n' },
   }, t);
   const ctx = fakeCtx({ run: runner }, t);
@@ -33,7 +33,7 @@ test('codex: nothing installed -> plan is marketplace add + install with exact a
 
 test('codex: marketplace present, plugin absent -> install only', async (t) => {
   const runner = fakeRunner({
-    'codex plugin list --json': { stdout: '{"installed": []}' },
+    'codex plugin list --marketplace specx --json': { stdout: '{"installed": []}' },
     'codex plugin marketplace list': {
       stdout: `MARKETPLACE ROOT\n${assets.marketplace.name} github:${assets.marketplace.githubRepo}\n`,
     },
@@ -53,7 +53,7 @@ test('codex: marketplace present, plugin absent -> install only', async (t) => {
 
 test('codex: installed at 9.9.9 -> plan skip, status plugin 9.9.9 and not outdated', async (t) => {
   const runner = fakeRunner({
-    'codex plugin list --json': {
+    'codex plugin list --marketplace specx --json': {
       stdout: JSON.stringify({
         installed: [
           { pluginId: assets.plugin.id, version: '9.9.9', enabled: true },
@@ -75,7 +75,7 @@ test('codex: installed at 9.9.9 -> plan skip, status plugin 9.9.9 and not outdat
 
 test('codex: installed at 0.0.1 -> status outdated', async (t) => {
   const runner = fakeRunner({
-    'codex plugin list --json': {
+    'codex plugin list --marketplace specx --json': {
       stdout: JSON.stringify({
         installed: [
           { pluginId: assets.plugin.id, version: '0.0.1', enabled: true },
@@ -93,7 +93,7 @@ test('codex: installed at 0.0.1 -> status outdated', async (t) => {
 
 test('codex: list command fails (non-zero exit) -> status unknown, plan single skip', async (t) => {
   const runner = fakeRunner({
-    'codex plugin list --json': { code: 1, stderr: 'some crash' },
+    'codex plugin list --marketplace specx --json': { code: 1, stderr: 'some crash' },
   }, t);
   const ctx = fakeCtx({ run: runner }, t);
 
@@ -108,7 +108,7 @@ test('codex: list command fails (non-zero exit) -> status unknown, plan single s
 
 test('codex: list command fails (bad JSON) -> status unknown, plan single skip', async (t) => {
   const runner = fakeRunner({
-    'codex plugin list --json': { stdout: 'not json' },
+    'codex plugin list --marketplace specx --json': { stdout: 'not json' },
   }, t);
   const ctx = fakeCtx({ run: runner }, t);
 
@@ -123,7 +123,7 @@ test('codex: list command fails (bad JSON) -> status unknown, plan single skip',
 
 test('codex: remove -> remove command, never marketplace remove', async (t) => {
   const runner = fakeRunner({
-    'codex plugin list --json': {
+    'codex plugin list --marketplace specx --json': {
       stdout: JSON.stringify({
         installed: [
           { pluginId: assets.plugin.id, version: '9.9.9', enabled: true },

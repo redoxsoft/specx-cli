@@ -1,9 +1,9 @@
 import { ALL_AGENTS, resolveAgents, type Agent, type Detection } from '../agents/index.js';
 import type { Assets } from '../core/assets.js';
 import type { Ctx } from '../core/context.js';
-import { executePlan, renderPlan, type AgentPlan } from '../core/plan.js';
-import { findExecutable } from '../core/which.js';
-import { formatCheck, formatCross, formatValidAgents, type CommandOptions, type IO } from './io.js';
+import { renderPlan, type AgentPlan } from '../core/plan.js';
+import { applyPlans, exitCodeFor, outcomeWithoutChanges, planProblems, printResults, type AgentResult } from './apply.js';
+import { formatValidAgents, type CommandOptions, type IO } from './io.js';
 
 export async function init(
   ctx: Ctx,
@@ -74,6 +74,8 @@ export async function init(
   // 4. Plan
   const planned: { agent: Agent; plan: AgentPlan }[] = [];
   for (const { agent, det } of chosen) {
+    // Checking an agent runs its CLI, which can take a while.
+    io.out(`Checking ${agent.name}…`);
     const plan = await agent.planInit(ctx, assets, det);
     planned.push({ agent, plan });
   }
@@ -86,8 +88,15 @@ export async function init(
 
   const allSkip = plans.every((p) => p.steps.every((s) => s.kind === 'skip'));
   if (allSkip) {
-    io.out('Nothing to do.');
-    return 0;
+    const results = planned.map(({ agent, plan }) => ({
+      agent,
+      outcome: outcomeWithoutChanges(plan),
+      problems: planProblems(plan),
+      backupPaths: [],
+    }));
+    printResults(ctx, results, io, 'init');
+    printNextSteps(results, assets, io);
+    return exitCodeFor(results);
   }
 
   // 5. --dry-run
@@ -106,65 +115,27 @@ export async function init(
     }
   }
 
-  // 7. Apply
-  const resultsByAgent: {
-    agent: Agent;
-    ok: boolean;
-    error?: string;
-    backupPaths: string[];
-  }[] = [];
-
-  for (const { agent, plan } of planned) {
-    const stepResults = await executePlan(ctx, plan, (name) => findExecutable(ctx, name));
-    const failedStep = stepResults.find((r) => !r.ok);
-    const backupPaths = stepResults
-      .map((r) => r.backupPath)
-      .filter((b): b is string => typeof b === 'string' && b.length > 0);
-
-    if (failedStep) {
-      resultsByAgent.push({
-        agent,
-        ok: false,
-        error: failedStep.error ?? 'Unknown error',
-        backupPaths,
-      });
-    } else {
-      resultsByAgent.push({
-        agent,
-        ok: true,
-        backupPaths,
-      });
-    }
-  }
+  // 7. Apply, one agent after another; a failure doesn't stop the others.
+  const results = await applyPlans(ctx, planned, io);
 
   // 8. Summary
-  const checkMark = formatCheck(ctx);
-  const crossMark = formatCross(ctx);
+  printResults(ctx, results, io, 'init');
+  printNextSteps(results, assets, io);
 
-  for (const res of resultsByAgent) {
-    if (res.ok) {
-      io.out(`${checkMark} ${res.agent.name}`);
-    } else {
-      io.out(`${crossMark} ${res.agent.name}: ${res.error}`);
-    }
+  // 9. Exit 0 only when every chosen agent is set up.
+  return exitCodeFor(results);
+}
+
+/** Sign-in steps only for agents that are fully set up; others already show what's wrong. */
+function printNextSteps(results: AgentResult[], assets: Assets, io: IO): void {
+  const ready = results.filter((r) => r.outcome === 'done' || r.outcome === 'unchanged').map((r) => r.agent);
+  io.out('');
+  io.out('Next steps:');
+  for (const agent of ready) {
+    io.out(`  ${agent.signInHint(assets)}`);
   }
-
-  const allBackups = resultsByAgent.flatMap((r) => r.backupPaths);
-  if (allBackups.length > 0) {
-    io.out(`Backups written to:\n${allBackups.map((p) => `  ${p}`).join('\n')}`);
-  }
-
-  const successfulAgents = resultsByAgent.filter((r) => r.ok).map((r) => r.agent);
-  if (successfulAgents.length > 0) {
-    io.out('');
-    io.out('Next steps:');
-    for (const agent of successfulAgents) {
-      io.out(`  ${agent.signInHint(assets)}`);
-    }
+  if (ready.length > 0) {
     io.out('  In your agent, run /specx setup to choose a workspace (Codex: $specx setup).');
-    io.out(`  Other agents: ${assets.connectPageUrl}`);
   }
-
-  // 9. Exit 0 if every chosen agent succeeded, else 1
-  return resultsByAgent.every((r) => r.ok) ? 0 : 1;
+  io.out(`  Other agents: ${assets.connectPageUrl}`);
 }

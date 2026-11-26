@@ -106,7 +106,7 @@ test('commands: one agent failing (Claude install exits 1) and Cursor succeeding
   assert.equal(fs.existsSync(skillFile), true, 'Cursor skill file was written');
 
   assert.match(io.outText, /Claude Code: Command exited with code 1/);
-  assert.match(io.outText, /^✓ Cursor$/m, 'Cursor still succeeds');
+  assert.match(io.outText, /^✓ Cursor: set up$/m, 'Cursor still succeeds');
   assert.ok(
     runner.calls.some(
       (call) => call.command === claudeExe && call.args.join(' ') === `plugin install ${assets.plugin.id} --scope user`,
@@ -153,4 +153,54 @@ test('commands: unknown --agent foo -> exit 2 listing valid names', async (t) =>
   assert.match(io.errText, /claude-code/, 'lists claude-code');
   assert.match(io.errText, /codex/, 'lists codex');
   assert.match(io.errText, /cursor/, 'lists cursor');
+});
+
+test('commands: a Codex check that times out -> "not set up", no Codex sign-in hint, Cursor still set up, exit 1', async (t) => {
+  const home = tempHome(t);
+  const io = fakeIo(undefined, t);
+  const assets = testAssets();
+  const runner = fakeRunner({}, t);
+  const ctx = fakeCtx({ homeDir: home, isTTY: false, run: runner }, t);
+
+  makeAgentExecutable(ctx.tempBinDir, 'codex', ctx.platform);
+  makeAgentExecutable(ctx.tempBinDir, 'cursor', ctx.platform);
+  const codexExe = findExecutable(ctx, 'codex');
+  assert.ok(codexExe, 'codex is resolved inside the temp bin');
+  runner.setResponses({
+    [`${codexExe} plugin list --marketplace ${assets.marketplace.name} --json`]: { code: null, timedOut: true },
+  });
+
+  const code = await runCli(['init', '--yes', '--agent', 'codex,cursor'], ctx, io, assets);
+
+  assert.equal(code, 1, 'exits 1 because Codex is not set up');
+  assert.match(io.outText, /^Checking Codex…$/m, 'shows progress while checking');
+  assert.match(io.outText, /^Cursor: Add SpecX to Cursor's MCP servers…$/m, 'shows progress while applying');
+  assert.match(io.outText, /^! Codex: not set up$/m);
+  assert.match(io.outText, /timed out/);
+  assert.match(io.outText, /^✓ Cursor: set up$/m);
+  assert.doesNotMatch(io.outText, /codex mcp login/, 'no sign-in hint for an agent that is not set up');
+  assert.match(io.outText, /Cursor asks you to sign in/);
+});
+
+test('commands: init when everything is already set up -> "already set up", exit 0', async (t) => {
+  const home = tempHome(t);
+  const io = fakeIo(undefined, t);
+  const assets = testAssets();
+  const runner = fakeRunner({}, t);
+  const ctx = fakeCtx({ homeDir: home, isTTY: false, run: runner }, t);
+
+  makeAgentExecutable(ctx.tempBinDir, 'codex', ctx.platform);
+  const codexExe = findExecutable(ctx, 'codex');
+  assert.ok(codexExe);
+  runner.setResponses({
+    [`${codexExe} plugin list --marketplace ${assets.marketplace.name} --json`]: {
+      stdout: JSON.stringify({ installed: [{ pluginId: assets.plugin.id, version: assets.pluginVersion, enabled: true }] }),
+    },
+  });
+
+  const code = await runCli(['init', '--yes', '--agent', 'codex'], ctx, io, assets);
+
+  assert.equal(code, 0);
+  assert.match(io.outText, /^✓ Codex: already set up$/m);
+  assert.match(io.outText, /codex mcp login/);
 });

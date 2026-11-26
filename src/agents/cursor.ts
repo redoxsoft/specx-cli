@@ -195,7 +195,7 @@ export const cursorAgent: Agent = {
       return {
         agentId: 'cursor',
         agentName: 'Cursor',
-        steps: [{ kind: 'skip', describe: MCP_JSON_ERROR }],
+        steps: [{ kind: 'skip', describe: MCP_JSON_ERROR, problem: true }],
         notes,
       };
     }
@@ -212,7 +212,7 @@ export const cursorAgent: Agent = {
     } else if (isOwnedMcpEntry(looked.entry, assets.mcp.url)) {
       steps.push({ kind: 'skip', describe: "SpecX MCP server is already configured in Cursor's mcp.json" });
     } else {
-      steps.push({ kind: 'skip', describe: leftAlone(assets.mcp.serverName, looked.entry) });
+      steps.push({ kind: 'skip', describe: leftAlone(assets.mcp.serverName, looked.entry), problem: true });
     }
 
     for (const skill of assets.skills) {
@@ -271,7 +271,7 @@ export const cursorAgent: Agent = {
     const steps: Step[] = [];
 
     if (!looked.ok) {
-      steps.push({ kind: 'skip', describe: MCP_JSON_ERROR });
+      steps.push({ kind: 'skip', describe: MCP_JSON_ERROR, problem: true });
     } else if (looked.entry !== undefined) {
       if (isOwnedMcpEntry(looked.entry, assets.mcp.url)) {
         const change = planRemoveProperty(
@@ -281,7 +281,7 @@ export const cursorAgent: Agent = {
         );
         if (change) steps.push({ kind: 'file', change });
       } else {
-        steps.push({ kind: 'skip', describe: leftAlone(assets.mcp.serverName, looked.entry) });
+        steps.push({ kind: 'skip', describe: leftAlone(assets.mcp.serverName, looked.entry), problem: true });
       }
     }
 
@@ -299,6 +299,7 @@ export const cursorAgent: Agent = {
         steps.push({
           kind: 'skip',
           describe: `Skill directory ${dir} was not installed by SpecX (left alone)`,
+          problem: true,
         });
       }
     }

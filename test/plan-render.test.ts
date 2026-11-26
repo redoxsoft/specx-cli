@@ -34,7 +34,7 @@ function renderedPiece(step: Step): string {
     case 'remove-dir':
       return `remove directory ${step.dir}`;
     case 'skip':
-      return `skip: ${step.describe}`;
+      return step.problem ? `! ${step.describe}` : `skip: ${step.describe}`;
     default: {
       const unreachable: never = step;
       return unreachable;

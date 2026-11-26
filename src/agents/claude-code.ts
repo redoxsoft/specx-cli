@@ -195,7 +195,7 @@ export const claudeCodeAgent: Agent = {
       return {
         agentId: 'claude-code',
         agentName: 'Claude Code',
-        steps: [{ kind: 'skip', describe: pluginRes.error }],
+        steps: [{ kind: 'skip', describe: pluginRes.error, problem: true }],
         notes,
       };
     }
@@ -216,7 +216,7 @@ export const claudeCodeAgent: Agent = {
       return {
         agentId: 'claude-code',
         agentName: 'Claude Code',
-        steps: [{ kind: 'skip', describe: marketplaceRes.error }],
+        steps: [{ kind: 'skip', describe: marketplaceRes.error, problem: true }],
         notes,
       };
     }
@@ -262,7 +262,7 @@ export const claudeCodeAgent: Agent = {
       return {
         agentId: 'claude-code',
         agentName: 'Claude Code',
-        steps: [{ kind: 'skip', describe: pluginRes.error }],
+        steps: [{ kind: 'skip', describe: pluginRes.error, problem: true }],
         notes,
       };
     }

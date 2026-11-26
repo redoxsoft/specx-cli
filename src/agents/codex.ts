@@ -43,16 +43,24 @@ function parseCodexPlugins(stdout: string): CodexPluginItem[] | null {
   }
 }
 
+/**
+ * Scoped to our marketplace: an unscoped `codex plugin list` refreshes every remote
+ * catalog first and took 130 s on a stale cache (0.1 s scoped). An unknown marketplace
+ * returns an empty list.
+ */
 async function listCodexPlugins(
   ctx: Ctx,
   executable: string,
+  marketplaceName: string,
 ): Promise<{ ok: true; plugins: CodexPluginItem[] } | { ok: false; error: string }> {
-  const res = await ctx.run(executable, ['plugin', 'list', '--json'], { timeoutMs: LIST_TIMEOUT_MS });
-  const failed = commandError('codex plugin list --json', res);
+  const args = ['plugin', 'list', '--marketplace', marketplaceName, '--json'];
+  const label = `codex ${args.join(' ')}`;
+  const res = await ctx.run(executable, args, { timeoutMs: LIST_TIMEOUT_MS });
+  const failed = commandError(label, res);
   if (failed) return { ok: false, error: failed };
   const plugins = parseCodexPlugins(res.stdout);
   if (plugins === null) {
-    return { ok: false, error: 'codex plugin list --json returned invalid JSON' };
+    return { ok: false, error: `${label} returned invalid JSON` };
   }
   return { ok: true, plugins };
 }
@@ -117,7 +125,7 @@ export const codexAgent: Agent = {
       };
     }
 
-    const res = await listCodexPlugins(ctx, det.executable);
+    const res = await listCodexPlugins(ctx, det.executable, assets.marketplace.name);
     if (!res.ok) {
       return {
         agentId: 'codex',
@@ -174,12 +182,12 @@ export const codexAgent: Agent = {
       };
     }
 
-    const pluginRes = await listCodexPlugins(ctx, det.executable);
+    const pluginRes = await listCodexPlugins(ctx, det.executable, assets.marketplace.name);
     if (!pluginRes.ok) {
       return {
         agentId: 'codex',
         agentName: 'Codex',
-        steps: [{ kind: 'skip', describe: pluginRes.error }],
+        steps: [{ kind: 'skip', describe: pluginRes.error, problem: true }],
         notes,
       };
     }
@@ -200,7 +208,7 @@ export const codexAgent: Agent = {
       return {
         agentId: 'codex',
         agentName: 'Codex',
-        steps: [{ kind: 'skip', describe: mpRes.error }],
+        steps: [{ kind: 'skip', describe: mpRes.error, problem: true }],
         notes,
       };
     }
@@ -240,12 +248,12 @@ export const codexAgent: Agent = {
       };
     }
 
-    const pluginRes = await listCodexPlugins(ctx, det.executable);
+    const pluginRes = await listCodexPlugins(ctx, det.executable, assets.marketplace.name);
     if (!pluginRes.ok) {
       return {
         agentId: 'codex',
         agentName: 'Codex',
-        steps: [{ kind: 'skip', describe: pluginRes.error }],
+        steps: [{ kind: 'skip', describe: pluginRes.error, problem: true }],
         notes,
       };
     }
