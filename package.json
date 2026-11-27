@@ -1,6 +1,6 @@
 {
   "name": "specx-cli",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Set up SpecX in your coding agents (Claude Code, Codex, Cursor, Antigravity, VS Code / Copilot): npx specx-cli@latest init",
   "license": "MIT",
   "author": "Redoxsoft (https://redoxsoft.com)",
