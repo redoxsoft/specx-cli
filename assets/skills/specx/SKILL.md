@@ -173,4 +173,4 @@ Remember this project's default workspace.
 3. Write .specx/settings.json in the open project with { "workspaceId": "<uuid>", "workspaceName": "<label>" }. workspaceId is the identity. workspaceName is the display label.
 4. If .gitignore does not already list .specx/settings.json, add that line.
 5. If you cannot write files, show the user the path .specx/settings.json and the JSON content to create. Stop there.
-<!-- specx-plugin: 0720a6ab version: 0.1.1 -->
+<!-- specx-plugin: 0720a6ab version: 0.1.2 -->

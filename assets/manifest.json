@@ -1,6 +1,6 @@
 {
   "generatedBy": "redoxsoft-mcp packaging/build.ts",
-  "pluginVersion": "0.1.1",
+  "pluginVersion": "0.1.2",
   "promptVersion": "0720a6ab",
   "marketplace": {
     "name": "redoxsoft",
