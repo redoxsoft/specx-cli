@@ -38,11 +38,21 @@ export function isOwnedSkillDir(dir: string): boolean {
 }
 
 export function isOwnedMcpEntry(entry: unknown, mcpUrl: string): boolean {
-  if (entry === null || typeof entry !== 'object') {
+  if (entry === null || typeof entry !== 'object' || Array.isArray(entry)) {
     return false;
   }
   const obj = entry as Record<string, unknown>;
-  return typeof obj.url === 'string' && obj.url === mcpUrl;
+  const urlMatches = obj.url === mcpUrl;
+  const serverUrlMatches = obj.serverUrl === mcpUrl;
+
+  const urlHasOther = obj.url !== undefined && !urlMatches;
+  const serverUrlHasOther = obj.serverUrl !== undefined && !serverUrlMatches;
+
+  if (urlHasOther || serverUrlHasOther) {
+    return false;
+  }
+
+  return urlMatches || serverUrlMatches;
 }
 
 export const OWNED_SKILL_NAMES: readonly string[] = ['specx', 'specx-setup'] as const;

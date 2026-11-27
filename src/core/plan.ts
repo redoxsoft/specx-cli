@@ -12,8 +12,11 @@ export type Step =
   | { kind: 'file'; change: FileChange }
   | { kind: 'copy-skill'; skill: Assets['skills'][number]; destDir: string; describe: string }
   | { kind: 'remove-dir'; dir: string; describe: string }
-  /** Nothing to do. `problem`: SpecX couldn't be set up here (shown as needing attention). */
-  | { kind: 'skip'; describe: string; problem?: boolean };
+  /**
+   * Nothing to do. `problem`: SpecX couldn't be set up here (shown as needing attention).
+   * `absent`: SpecX isn't installed for this agent (update and remove have nothing to act on).
+   */
+  | { kind: 'skip'; describe: string; problem?: boolean; absent?: boolean };
 
 export interface AgentPlan {
   agentId: string;

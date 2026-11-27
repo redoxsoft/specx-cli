@@ -6,15 +6,16 @@ Set up [SpecX](https://specx.redoxsoft.com) in your coding agents with one comma
 npx specx-cli@latest init
 ```
 
-It finds the agents on your machine (Claude Code, Codex, Cursor), shows exactly what it will change, and asks before changing anything. Then sign in once in each agent and run `/specx setup` there to choose a workspace.
+It finds the agents on your machine (Claude Code, Codex, Cursor, Antigravity, VS Code / Copilot), shows exactly what it will change, and asks before changing anything. Then sign in once in each agent and run `/specx setup` there to choose a workspace.
 
 | Command | What it does |
 | --- | --- |
 | `npx specx-cli@latest init` | Set up SpecX in the agents you pick |
 | `npx specx-cli@latest status` | Show what's installed, which version, and anything that needs attention |
+| `npx specx-cli@latest update` | Update SpecX in the agents you pick |
 | `npx specx-cli@latest remove` | Remove SpecX from the agents you pick |
 
-Options: `--agent claude,codex,cursor`, `--yes` (no questions), `--dry-run` (show the plan, change nothing), `--json` (status only).
+Options: `--agent claude,codex,cursor,agy,code,copilot`, `--yes` (no questions), `--dry-run` (show the plan, change nothing), `--json` (status only).
 
 Always run it with `@latest`: without it, `npx` may reuse an older copy it cached earlier.
 
@@ -22,10 +23,12 @@ Always run it with `@latest`: without it, `npx` may reuse an older copy it cache
 
 - **Claude Code** and **Codex**: it uses their own commands to add the Redoxsoft plugin marketplace and install the SpecX plugin.
 - **Cursor**: it adds a `specx` entry to `~/.cursor/mcp.json` (keeping your comments and other servers) and copies the SpecX skill to `~/.cursor/skills/specx/`.
+- **Antigravity**: it adds a `specx` entry to `~/.gemini/config/mcp_config.json` (keeping your comments and other servers) and copies the SpecX skill to `~/.gemini/config/skills/specx/`.
+- **VS Code / Copilot**: it adds a `specx` entry to `~/.copilot/mcp-config.json` or `$COPILOT_HOME/mcp-config.json` (keeping your comments and other servers) and copies the SpecX skill to that Copilot home's `skills/specx/`.
 
 It never reads or stores your sign-in tokens or API keys. Before changing a config file it saves a backup in your user cache folder.
 
-Other agents (VS Code, ChatGPT, claude.ai, Windsurf, …): see <https://specx.redoxsoft.com/docs/connect>.
+Other agents (ChatGPT, claude.ai, Windsurf, …): see <https://specx.redoxsoft.com/docs/connect>.
 
 ## Development
 

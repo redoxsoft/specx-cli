@@ -1,0 +1,6 @@
+{
+  "mcpServers": {
+    "specx": {
+      "type": "http",
+      "url": "https://mcp.redoxsoft.com/mcp"
+    }

@@ -3,7 +3,7 @@ import type { Assets } from '../core/assets.js';
 import type { Ctx } from '../core/context.js';
 import { renderPlan, type AgentPlan } from '../core/plan.js';
 import { applyPlans, exitCodeFor, outcomeWithoutChanges, planProblems, printResults } from './apply.js';
-import { formatValidAgents, type CommandOptions, type IO } from './io.js';
+import { formatNoAgentsMessage, formatValidAgents, type CommandOptions, type IO } from './io.js';
 
 export async function remove(
   ctx: Ctx,
@@ -39,7 +39,7 @@ export async function remove(
   // 2. None found
   const found = detected.filter(({ det }) => det.found);
   if (found.length === 0) {
-    io.out('No supported agents found (Claude Code, Codex, Cursor).');
+    io.out(formatNoAgentsMessage());
     io.out(`Other agents: ${assets.connectPageUrl}`);
     return 1;
   }

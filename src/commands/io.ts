@@ -68,6 +68,11 @@ export function formatValidAgents(): string {
   ).join(', ');
 }
 
+export function formatNoAgentsMessage(): string {
+  const names = ALL_AGENTS.map((a) => a.name).join(', ');
+  return `No supported agents found (${names}).`;
+}
+
 export function getCliVersion(): string {
   const pkgPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'package.json');
   let parsed: unknown;

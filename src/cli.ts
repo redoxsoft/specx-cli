@@ -10,6 +10,7 @@ import { init } from './commands/init.js';
 import { formatValidAgents, getCliVersion, realIo, type CommandOptions, type IO } from './commands/io.js';
 import { remove } from './commands/remove.js';
 import { status } from './commands/status.js';
+import { update } from './commands/update.js';
 import { loadAssets, type Assets } from './core/assets.js';
 import { realCtx, type Ctx } from './core/context.js';
 
@@ -83,7 +84,7 @@ async function dispatchCli(
   const command = positionals[0];
 
   // Phase 1: these are rejected even when combined with --version or --help.
-  if (command === 'update' || values.project || values['api-key-env'] !== undefined) {
+  if (values.project || values['api-key-env'] !== undefined) {
     io.err('not available yet');
     return 2;
   }
@@ -95,7 +96,7 @@ async function dispatchCli(
   }
 
   // Unknown command
-  if (command && !['init', 'status', 'remove', 'help'].includes(command)) {
+  if (command && !['init', 'status', 'update', 'remove', 'help'].includes(command)) {
     io.err(`Unknown command: ${command}`);
     await help(ctx, assets, {}, io);
     return 2;
@@ -132,6 +133,8 @@ async function dispatchCli(
       return init(ctx, assets, options, io);
     case 'status':
       return status(ctx, assets, options, io);
+    case 'update':
+      return update(ctx, assets, options, io);
     case 'remove':
       return remove(ctx, assets, options, io);
     default:

@@ -2,6 +2,7 @@ import type { Assets } from '../core/assets.js';
 import type { Ctx } from '../core/context.js';
 import type { AgentPlan, Step } from '../core/plan.js';
 import { isWindowsBinaryUnderWsl } from '../core/platform.js';
+import { isOlder } from '../core/version.js';
 import { findExecutable } from '../core/which.js';
 import { commandError, parseJson } from './command-output.js';
 import type { Agent, AgentStatus, Detection } from './types.js';
@@ -150,7 +151,7 @@ export const claudeCodeAgent: Agent = {
     const plugin = res.plugins.find((p) => p.id === assets.plugin.id);
     if (plugin) {
       const version = plugin.version ?? null;
-      const outdated = version !== null ? version !== assets.pluginVersion : null;
+      const outdated = version !== null ? isOlder(version, assets.pluginVersion) : null;
       const problems: string[] = [];
       if (plugin.enabled === false) {
         problems.push(`SpecX is installed but disabled (claude plugin enable ${assets.plugin.id})`);
@@ -288,7 +289,68 @@ export const claudeCodeAgent: Agent = {
     return {
       agentId: 'claude-code',
       agentName: 'Claude Code',
-      steps: [{ kind: 'skip', describe: 'SpecX is not installed' }],
+      steps: [{ kind: 'skip', describe: 'SpecX is not installed', absent: true }],
+      notes,
+    };
+  },
+
+  async planUpdate(ctx: Ctx, assets: Assets, det: Detection): Promise<AgentPlan> {
+    const notes = det.note ? [det.note] : [];
+    if (!det.found || !det.executable) {
+      return {
+        agentId: 'claude-code',
+        agentName: 'Claude Code',
+        steps: [{ kind: 'skip', describe: det.note ?? 'Claude Code is not installed' }],
+        notes,
+      };
+    }
+
+    const pluginRes = await listClaudePlugins(ctx, det.executable);
+    if (!pluginRes.ok) {
+      return {
+        agentId: 'claude-code',
+        agentName: 'Claude Code',
+        steps: [{ kind: 'skip', describe: pluginRes.error, problem: true }],
+        notes,
+      };
+    }
+
+    const plugin = pluginRes.plugins.find((p) => p.id === assets.plugin.id);
+    if (!plugin) {
+      return {
+        agentId: 'claude-code',
+        agentName: 'Claude Code',
+        steps: [{ kind: 'skip', describe: 'not installed; run `npx specx-cli@latest init`', absent: true }],
+        notes,
+      };
+    }
+
+    if (plugin.version && !isOlder(plugin.version, assets.pluginVersion)) {
+      return {
+        agentId: 'claude-code',
+        agentName: 'Claude Code',
+        steps: [{ kind: 'skip', describe: 'up to date' }],
+        notes,
+      };
+    }
+
+    return {
+      agentId: 'claude-code',
+      agentName: 'Claude Code',
+      steps: [
+        {
+          kind: 'run',
+          command: 'claude',
+          args: ['plugin', 'marketplace', 'update', assets.marketplace.name],
+          describe: `Update marketplace ${assets.marketplace.name}`,
+        },
+        {
+          kind: 'run',
+          command: 'claude',
+          args: ['plugin', 'update', assets.plugin.id],
+          describe: `Update plugin ${assets.plugin.id}`,
+        },
+      ],
       notes,
     };
   },

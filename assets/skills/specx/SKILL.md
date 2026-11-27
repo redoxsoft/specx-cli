@@ -3,7 +3,7 @@ name: specx
 description: "Use when any of these apply: the user says \"/specx\", mentions SpecX, asks to use SpecX, or asks about their SpecX templates, specs (documents), or pipelines. Also use for \"/specx setup\" or \"set up SpecX\"."
 ---
 
-This skill works through the specx MCP server's tools. Treat the user's message after "/specx" as the task. If the task is "setup" (or the user says "set up SpecX"), follow "Setup" at the end of this skill instead.
+This skill works through the specx MCP server's tools. Treat the user's message after "/specx" as the task. If the task is "setup" (or the user says "set up SpecX"), follow "Setup" at the end of this skill instead. This is SpecX prompt version 0720a6ab. Only if the SpecX server's instructions contain a line "SpecX prompt version: <hash>" with a different hash, tell the user once, before anything else, that their SpecX plugin is out of date and how to update it: run `npx specx-cli@latest update`, or update the SpecX plugin in their agent's plugin settings. If there's no such line, say nothing about versions.
 
 You are running /specx.
 

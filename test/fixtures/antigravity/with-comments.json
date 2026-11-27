@@ -1,0 +1,9 @@
+{
+	// A line comment
+	/* A block comment */
+	"mcpServers": {
+		"github": {
+			"serverUrl": "https://example.com/mcp"
+		}
+	}
+}

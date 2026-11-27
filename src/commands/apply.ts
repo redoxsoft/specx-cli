@@ -12,7 +12,8 @@ import { formatCheck, formatCross, type IO } from './io.js';
  * - not-done: nothing applied because of a problem;
  * - failed: a change failed.
  */
-export type Outcome = 'done' | 'partial' | 'unchanged' | 'not-done' | 'failed';
+/** `absent`: SpecX isn't installed for this agent, so update/remove had nothing to do. */
+export type Outcome = 'done' | 'partial' | 'unchanged' | 'absent' | 'not-done' | 'failed';
 
 export interface AgentResult {
   agent: Agent;
@@ -28,7 +29,9 @@ export function planProblems(plan: AgentPlan): string[] {
 
 /** Outcome of a plan that wasn't applied: no steps to run. */
 export function outcomeWithoutChanges(plan: AgentPlan): Outcome {
-  return planProblems(plan).length > 0 ? 'not-done' : 'unchanged';
+  if (planProblems(plan).length > 0) return 'not-done';
+  const absent = plan.steps.length > 0 && plan.steps.every((step) => step.kind === 'skip' && step.absent);
+  return absent ? 'absent' : 'unchanged';
 }
 
 /** Applies each agent's plan in turn, printing a line before each step so long installs show progress. */
@@ -61,11 +64,12 @@ export async function applyPlans(
   return results;
 }
 
-const HEADLINE: Record<'init' | 'remove', Record<Outcome, string>> = {
+const HEADLINE: Record<'init' | 'remove' | 'update', Record<Outcome, string>> = {
   init: {
     done: 'set up',
     partial: 'partly set up',
     unchanged: 'already set up',
+    absent: 'not installed',
     'not-done': 'not set up',
     failed: 'failed',
   },
@@ -73,18 +77,28 @@ const HEADLINE: Record<'init' | 'remove', Record<Outcome, string>> = {
     done: 'removed',
     partial: 'partly removed',
     unchanged: 'nothing to remove',
+    absent: 'not installed',
     'not-done': 'not removed',
+    failed: 'failed',
+  },
+  update: {
+    done: 'updated',
+    partial: 'partly updated',
+    unchanged: 'up to date',
+    absent: 'not installed (run `npx specx-cli@latest init`)',
+    'not-done': 'not updated',
     failed: 'failed',
   },
 };
 
 /** One line per agent, with problems indented under it, then backup locations. */
-export function printResults(ctx: Ctx, results: AgentResult[], io: IO, command: 'init' | 'remove'): void {
+export function printResults(ctx: Ctx, results: AgentResult[], io: IO, command: 'init' | 'remove' | 'update'): void {
   const check = formatCheck(ctx);
   const cross = formatCross(ctx);
   io.out('');
   for (const res of results) {
-    const mark = res.outcome === 'done' || res.outcome === 'unchanged' ? check : res.outcome === 'failed' ? cross : '!';
+    const mark =
+      res.outcome === 'done' || res.outcome === 'unchanged' ? check : res.outcome === 'failed' ? cross : res.outcome === 'absent' ? '-' : '!';
     const headline = HEADLINE[command][res.outcome];
     io.out(res.outcome === 'failed' ? `${mark} ${res.agent.name}: ${res.error}` : `${mark} ${res.agent.name}: ${headline}`);
     for (const problem of res.problems) io.out(`    ${problem}`);
@@ -95,7 +109,7 @@ export function printResults(ctx: Ctx, results: AgentResult[], io: IO, command: 
   }
 }
 
-/** Exit code: 0 only when every agent ended done or unchanged. */
+/** Exit code: 0 only when every agent ended done, unchanged, or had nothing installed to act on. */
 export function exitCodeFor(results: AgentResult[]): number {
-  return results.every((r) => r.outcome === 'done' || r.outcome === 'unchanged') ? 0 : 1;
+  return results.every((r) => r.outcome === 'done' || r.outcome === 'unchanged' || r.outcome === 'absent') ? 0 : 1;
 }

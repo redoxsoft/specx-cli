@@ -22,12 +22,13 @@ export interface AgentStatus {
 }
 
 export interface Agent {
-  id: 'claude-code' | 'codex' | 'cursor';
+  id: 'claude-code' | 'codex' | 'cursor' | 'antigravity' | 'vscode';
   name: string; // "Claude Code", "Codex", "Cursor"
   aliases: string[]; // e.g. ['claude']
   detect(ctx: Ctx): Detection;
   status(ctx: Ctx, assets: Assets, det: Detection): Promise<AgentStatus>;
   planInit(ctx: Ctx, assets: Assets, det: Detection): Promise<AgentPlan>;
   planRemove(ctx: Ctx, assets: Assets, det: Detection): Promise<AgentPlan>;
+  planUpdate(ctx: Ctx, assets: Assets, det: Detection): Promise<AgentPlan>;
   signInHint(assets: Assets): string;
 }
